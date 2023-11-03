@@ -5,6 +5,8 @@ import (
 	"ccavenue/config"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -64,16 +66,16 @@ func NewClient(cfg config.Config, timeout time.Duration) (*APIClient, error) {
 	}, nil
 }
 
-func (c *APIClient) Post(command string, data CCAvenueData) (*http.Response, error) {
+func (c *APIClient) Post(command string, data CCAvenueData, destPtr any) error {
 
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	encReqBytes, err := c.Encrypt(jsonBytes)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	q := url.Values{}
@@ -86,14 +88,47 @@ func (c *APIClient) Post(command string, data CCAvenueData) (*http.Response, err
 
 	req, err := http.NewRequest("POST", c.Host, strings.NewReader(q.Encode()))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	response, err := c.Client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return response, nil
+	query := response.Body
+	defer query.Close()
+
+	rawQuery, err := io.ReadAll(query)
+	if err != nil {
+		return err
+	}
+	values, err := url.ParseQuery(string(rawQuery))
+	if err != nil {
+		return err
+	}
+
+	if values["status"][0] == "0" {
+
+		payload := strings.TrimSpace(values["enc_response"][0])
+		buf, err := hex.DecodeString(payload)
+		if err != nil {
+			return err
+		}
+
+		jsonBytes, err := c.Decrypt(buf)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(string(jsonBytes))
+
+		if err := json.Unmarshal(jsonBytes, destPtr); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return fmt.Errorf("%s", fmt.Sprintf("%+v", values))
 }
