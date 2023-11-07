@@ -97,9 +97,9 @@ func (c *APIClient) OrdersByDate(fromDate, toDate string) (*OrderResponse, error
 	return &orders, nil
 }
 
-func (c *APIClient) OrderByNo(orderNo string) (*OrderResponse, error) {
+func (c *APIClient) OrderByNo(fromDate, orderNo string) (*OrderResponse, error) {
 
-	data := CCAvenueData{OrderNo: orderNo}
+	data := CCAvenueData{FromDate: fromDate, OrderNo: orderNo}
 
 	order := OrderResponse{}
 	err := c.Post("orderLookup", data, &order)
