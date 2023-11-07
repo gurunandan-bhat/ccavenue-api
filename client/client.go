@@ -57,9 +57,9 @@ type CCAvenueParams struct {
 func NewClient(cfg config.Config, timeout time.Duration) (*APIClient, error) {
 
 	return &APIClient{
-		Host:         cfg.CCAvenue.Host,
+		Host:         cfg.Host,
 		Client:       &http.Client{Timeout: timeout},
-		AccessCode:   cfg.CCAvenue.AccessCode,
+		AccessCode:   cfg.AccessCode,
 		RequestType:  "JSON",
 		ResponseType: "JSON",
 		Version:      "1.1",

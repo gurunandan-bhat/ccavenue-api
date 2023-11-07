@@ -7,34 +7,15 @@ import (
 )
 
 const (
-	defaultConfigFileName = ".mario.json"
+	defaultConfigFileName = ".ccavenue.json"
 )
 
 type Config struct {
-	Layout struct {
-		Root string `json:"root,omitempty"`
-	} `json:"layout,omitempty"`
-	Db struct {
-		Driver   string `json:"driver,omitempty"`
-		Host     string `json:"host,omitempty"`
-		Name     string `json:"name,omitempty"`
-		User     string `json:"user,omitempty"`
-		Password string `json:"password,omitempty"`
-	} `json:"db,omitempty"`
-	Remote struct {
-		Host      string `json:"host,omitempty"`
-		Port      int    `json:"port,omitempty"`
-		User      string `json:"user,omitempty"`
-		ImageRoot string `json:"remote_image_root,omitempty"`
-		KeyPath   string `json:"key_path,omitempty"`
-		HostKey   string `json:"host_key,omitempty"`
-	} `json:"remote,omitempty"`
-	CCAvenue struct {
-		Host       string `json:"host,omitempty"`
-		MerchantId int    `json:"merchant_id,omitempty"`
-		AccessCode string `json:"access_code,omitempty"`
-		WorkingKey string `json:"working_key,omitempty"`
-	} `json:"ccavenue,omitempty"`
+	Host       string `json:"host,omitempty"`
+	MerchantId int    `json:"merchant_id,omitempty"`
+	AccessCode string `json:"access_code,omitempty"`
+	WorkingKey string `json:"working_key,omitempty"`
+	IVStr      string `json:"iv_str,omitempty"`
 }
 
 var c = Config{}

@@ -20,7 +20,7 @@ func main() {
 		log.Fatal("Error creating client: ", err)
 	}
 
-	orderStatus, err := ccavClient.OrderByNo("03-11-2023", "6605")
+	orderStatus, err := ccavClient.OrdersByDate("05-11-2023", "07-11-2023")
 	if err != nil {
 		log.Fatal("Error from orders request: ", err)
 	}
