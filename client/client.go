@@ -37,14 +37,6 @@ func (*APIClient) Decrypt(buf []byte) ([]byte, error) {
 	return aescbc.NewCrypter().Decrypt(buf)
 }
 
-type CCAvenueData struct {
-	OrderNo    string `json:"order_no,omitempty"`
-	OrderEmail string `json:"order_email,omitempty"`
-	FromDate   string `json:"from_date,omitempty"`
-	ToDate     string `json:"to_date,omitempty"`
-	PageNumber int    `json:"page_number,omitempty"`
-}
-
 type CCAvenueParams struct {
 	EncRequest   string `json:"enc_request,omitempty"`
 	AccessCode   string `json:"access_code,omitempty"`
@@ -66,9 +58,9 @@ func NewClient(cfg config.Config, timeout time.Duration) (*APIClient, error) {
 	}, nil
 }
 
-func (c *APIClient) Post(command string, data CCAvenueData, destPtr any) error {
+func (c *APIClient) Post(command string, filter OrderFilter, destPtr any) error {
 
-	jsonBytes, err := json.Marshal(data)
+	jsonBytes, err := json.Marshal(filter)
 	if err != nil {
 		return err
 	}
@@ -121,8 +113,6 @@ func (c *APIClient) Post(command string, data CCAvenueData, destPtr any) error {
 		if err != nil {
 			return err
 		}
-
-		fmt.Println(string(jsonBytes))
 
 		if err := json.Unmarshal(jsonBytes, destPtr); err != nil {
 			return err

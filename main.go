@@ -20,15 +20,20 @@ func main() {
 		log.Fatal("Error creating client: ", err)
 	}
 
-	orderStatus, err := ccavClient.OrdersByDate("05-11-2023", "07-11-2023")
+	filter := client.OrderFilter{
+		FromDate:   "22-10-2023",
+		OrderEmail: "veena.cpsi@gmail.com",
+	}
+
+	orders, err := ccavClient.OrderLookup(filter)
 	if err != nil {
 		log.Fatal("Error from orders request: ", err)
 	}
 
-	statusBytes, err := json.MarshalIndent(orderStatus, "", "\t")
+	orderBytes, err := json.MarshalIndent(orders, "", "\t")
 	if err != nil {
 		log.Fatal("Error marshalling order status to JSON: ", err)
 	}
 
-	fmt.Println(string(statusBytes))
+	fmt.Println(string(orderBytes))
 }

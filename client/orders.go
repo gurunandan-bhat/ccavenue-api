@@ -71,6 +71,14 @@ type OrderStatus struct {
 	EmiDiscountValue     string `json:"emi_discount_value,omitempty"`
 }
 
+type OrderFilter struct {
+	OrderNo    string `json:"order_no,omitempty"`
+	OrderEmail string `json:"order_email,omitempty"`
+	FromDate   string `json:"from_date,omitempty"`
+	ToDate     string `json:"to_date,omitempty"`
+	PageNumber int    `json:"page_number,omitempty"`
+}
+
 type OrderResponse struct {
 	OrderStatusList []Order `json:"order_Status_List,omitempty"`
 	// Pagination
@@ -81,31 +89,13 @@ type OrderResponse struct {
 	ErrorCode string `json:"error_code,omitempty"`
 }
 
-func (c *APIClient) OrdersByDate(fromDate, toDate string) (*OrderResponse, error) {
-
-	data := CCAvenueData{
-		FromDate: fromDate,
-		ToDate:   toDate,
-	}
+func (c *APIClient) OrderLookup(filter OrderFilter) (*OrderResponse, error) {
 
 	orders := OrderResponse{}
-	err := c.Post("orderLookup", data, &orders)
+	err := c.Post("orderLookup", filter, &orders)
 	if err != nil {
 		return nil, err
 	}
 
 	return &orders, nil
-}
-
-func (c *APIClient) OrderByNo(fromDate, orderNo string) (*OrderResponse, error) {
-
-	data := CCAvenueData{FromDate: fromDate, OrderNo: orderNo}
-
-	order := OrderResponse{}
-	err := c.Post("orderLookup", data, &order)
-	if err != nil {
-		return nil, err
-	}
-
-	return &order, nil
 }
