@@ -4,7 +4,6 @@ import (
 	"ccavenue/aescbc"
 	"ccavenue/config"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,19 +21,9 @@ type APIClient struct {
 	Version      string
 }
 
-type Crypter interface {
-	Encrypt([]byte) ([]byte, error)
-	Decrypt([]byte) ([]byte, error)
-}
-
-func (*APIClient) Encrypt(buf []byte) ([]byte, error) {
-
-	return aescbc.NewCrypter().Encrypt(buf)
-}
-
-func (*APIClient) Decrypt(buf []byte) ([]byte, error) {
-
-	return aescbc.NewCrypter().Decrypt(buf)
+type Filter interface {
+	Encode() (string, error)
+	Command() string
 }
 
 type CCAvenueParams struct {
@@ -46,79 +35,88 @@ type CCAvenueParams struct {
 	Version      string `json:"version,omitempty"`
 }
 
-func NewClient(cfg config.Config, timeout time.Duration) (*APIClient, error) {
+const TIMEOUT = 15 * time.Second
+
+func NewClient(cfg config.Config, version string) (*APIClient, error) {
 
 	return &APIClient{
 		Host:         cfg.Host,
-		Client:       &http.Client{Timeout: timeout},
+		Client:       &http.Client{Timeout: TIMEOUT},
 		AccessCode:   cfg.AccessCode,
 		RequestType:  "JSON",
 		ResponseType: "JSON",
-		Version:      "1.1",
+		Version:      version,
 	}, nil
 }
 
-func (c *APIClient) Post(command string, filter OrderFilter, destPtr any) error {
+func (c *APIClient) Post(f Filter) (*[]byte, error) {
 
-	jsonBytes, err := json.Marshal(filter)
+	encStr, err := f.Encode()
 	if err != nil {
-		return err
-	}
-
-	encReqBytes, err := c.Encrypt(jsonBytes)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	q := url.Values{}
-	q.Add("enc_request", strings.ToUpper(hex.EncodeToString(encReqBytes)))
+	q.Add("enc_request", encStr)
 	q.Add("access_code", c.AccessCode)
-	q.Add("command", command)
+	q.Add("command", f.Command())
 	q.Add("request_type", c.RequestType)
 	q.Add("response_type", c.ResponseType)
 	q.Add("version", c.Version)
 
 	req, err := http.NewRequest("POST", c.Host, strings.NewReader(q.Encode()))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	response, err := c.Client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	query := response.Body
-	defer query.Close()
+	encResponse := response.Body
+	defer encResponse.Close()
 
-	rawQuery, err := io.ReadAll(query)
+	rawQuery, err := io.ReadAll(encResponse)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	values, err := url.ParseQuery(string(rawQuery))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if values["status"][0] == "0" {
 
-		payload := strings.TrimSpace(values["enc_response"][0])
-		buf, err := hex.DecodeString(payload)
-		if err != nil {
-			return err
+		encArr, ok := values["enc_response"]
+		if !ok || len(encArr) == 0 {
+			return nil, fmt.Errorf("invalid encrypted response: %v, %d\n %+v", ok, len(encArr), encArr)
 		}
 
-		jsonBytes, err := c.Decrypt(buf)
+		respStr, err := decode(encArr[0])
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		if err := json.Unmarshal(jsonBytes, destPtr); err != nil {
-			return err
-		}
-		return nil
+		return respStr, nil
 	}
 
-	return fmt.Errorf("%s", fmt.Sprintf("%+v", values))
+	return nil, fmt.Errorf("error parsing response%s", fmt.Sprintf("%+v", values))
+}
+
+func decode(encStr string) (*[]byte, error) {
+
+	payload := strings.TrimSpace(encStr)
+	buf, err := hex.DecodeString(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := aescbc.NewCrypter().Decrypt(buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
 }

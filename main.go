@@ -3,10 +3,8 @@ package main
 import (
 	"ccavenue/client"
 	"ccavenue/config"
-	"encoding/json"
 	"fmt"
 	"log"
-	"time"
 )
 
 func main() {
@@ -15,25 +13,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error reading configuration: %s", err)
 	}
-	ccavClient, err := client.NewClient(cfg, 15*time.Second)
+	ccavClient, err := client.NewClient(cfg, "1.2")
 	if err != nil {
 		log.Fatal("Error creating client: ", err)
 	}
 
-	filter := client.OrderFilter{
-		FromDate:   "22-10-2023",
-		OrderEmail: "veena.cpsi@gmail.com",
+	filter := client.PayoutFilter{
+		SettlementDate: "20-02-2024",
 	}
 
-	orders, err := ccavClient.OrderLookup(filter)
+	jsonStr, err := ccavClient.Post(filter)
 	if err != nil {
 		log.Fatal("Error from orders request: ", err)
 	}
 
-	orderBytes, err := json.MarshalIndent(orders, "", "\t")
-	if err != nil {
-		log.Fatal("Error marshalling order status to JSON: ", err)
-	}
-
-	fmt.Println(string(orderBytes))
+	fmt.Println("JSON: ", string(*jsonStr))
 }
