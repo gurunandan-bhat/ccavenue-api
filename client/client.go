@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -76,7 +77,11 @@ func (c *APIClient) Post(f Filter) (*[]byte, error) {
 	}
 
 	encResponse := response.Body
-	defer encResponse.Close()
+	defer func() {
+		if err := encResponse.Close(); err != nil {
+			log.Fatalf("error closing response body")
+		}
+	}()
 
 	rawQuery, err := io.ReadAll(encResponse)
 	if err != nil {
@@ -102,7 +107,7 @@ func (c *APIClient) Post(f Filter) (*[]byte, error) {
 		return respStr, nil
 	}
 
-	return nil, fmt.Errorf("error parsing response%s", fmt.Sprintf("%+v", values))
+	return nil, fmt.Errorf("error parsing response %s", fmt.Sprintf("%+v", values))
 }
 
 func decode(encStr string) (*[]byte, error) {

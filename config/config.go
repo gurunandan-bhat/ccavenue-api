@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -42,7 +43,11 @@ func Configuration(configFileName ...string) (Config, error) {
 		if err != nil {
 			return c, err
 		}
-		defer configFile.Close()
+		defer func() {
+			if err := configFile.Close(); err != nil {
+				log.Fatalf("error closing config file: %s", err)
+			}
+		}()
 
 		decoder := json.NewDecoder(configFile)
 		err = decoder.Decode(&c)

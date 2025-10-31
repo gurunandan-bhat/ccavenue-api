@@ -18,8 +18,10 @@ func main() {
 		log.Fatal("Error creating client: ", err)
 	}
 
-	filter := client.PayoutFilter{
-		SettlementDate: "20-02-2024",
+	filter := client.OrderLookupFilter{
+		FromDate:       "31-10-2025",
+		PageNumber:     1,
+		OrderMaxAmount: 201.00,
 	}
 
 	jsonStr, err := ccavClient.Post(filter)
@@ -27,5 +29,5 @@ func main() {
 		log.Fatal("Error from orders request: ", err)
 	}
 
-	fmt.Println("JSON: ", string(*jsonStr))
+	fmt.Println(string(*jsonStr))
 }
